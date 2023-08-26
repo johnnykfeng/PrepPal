@@ -1,0 +1,9 @@
+streamlit
+st-pages
+langchain
+openai
+tiktoken
+transformers
+python-docx
+pandas
+numpy
