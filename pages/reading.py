@@ -9,33 +9,37 @@ st.subheader("Pass your English test with the power of AI")
 test_choice = st.radio("What are you studying for?",
                        options=["IELTS", "CELPIP"])
 
+subject = test_choice
+n = random.randint(1, 5)
+
 st.text(f"We will help you study for {test_choice}")
 
-task_container = st.container()
-ar_container = st.container()
 s = "0"
 
-# Saved Sample
-sample = open('IELTS_reading_tasks/sample_1.txt', 'r', encoding="utf8")
+# Random Sample of chosen subject
+sample = open(f'{subject}_reading_tasks/sample_{n}.txt', 'r', encoding="utf8")
 # sample = random.choice
 
-
 def reading_task(sample):
-    task_container.markdown("Read the article below to start your assessment")
-    ar_container.subheader("Academic Reading test 1 - section 1 practice test")
+    task_container.write("Read the article below to start your assessment")
+    # ar_container.subheader(f"Academic Reading test 1 - section 1 practice test")
     ar_container.caption(
-        "This is the first section of your IELTS Reading test. You should spend about 20 minutes on Questions 1–13, which are based on Reading Passage 1 below.")
+        "This is the first section of your IELTS Reading test. \
+            You should spend about 20 minutes on Questions 1–13, \
+                which are based on Reading Passage 1 below.")
     ar_container.write(sample.read())
     return sample
 
-text_for_making_quiz = None
+# text_for_making_quiz = None
 if st.button("Get reading task"):
     # display reading task
     # load the reading into a variable
+    task_container = st.container()
+    ar_container = st.container()
     sample = reading_task(sample)
-    text_for_making_quiz = sample.read()
+#    text_for_making_quiz = sample.read()
 else:
-    task_container.markdown("Push button")
+    st.markdown("Push button")
 
 st.subheader("Score Form")
 

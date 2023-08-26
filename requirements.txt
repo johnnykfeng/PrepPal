@@ -7,3 +7,4 @@ transformers
 python-docx
 pandas
 numpy
+python-dotenv

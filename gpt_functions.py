@@ -1,8 +1,11 @@
 import openai
-import json
+import json 
+import os
+# Lisa, make sure to install python-dotenv in the new version
+from dotenv import load_dotenv, find_dotenv
+_ = load_dotenv(find_dotenv())
 
-# John's api key, please don't abuse
-openai.api_key = "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"
+openai.api_key = os.environ['OPENAI_API_KEY']
 
 def chat_completion(prompt,
                     model='gpt-3.5-turbo',
