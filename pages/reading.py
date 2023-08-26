@@ -1,7 +1,14 @@
 import streamlit as st
 import random
+import json
 from langchain.chat_models import ChatOpenAI
-from gpt_functions import mc_questions_json
+from gpt_functions import mc_questions_json, fitb_generate
+
+if 'sample_text' not in st.session_state:
+    print("---> Resetting sample_text")
+    st.session_state['sample_text'] = "None"
+    
+
 
 st.title("Reading Comprehension")
 st.subheader("Pass your English test with the power of AI")
@@ -16,10 +23,11 @@ st.text(f"We will help you study for {test_choice}")
 
 s = "0"
 
-# Random Sample of chosen subject
-sample = open(f'{subject}_reading_tasks/sample_{n}.txt', 'r', encoding="utf8")
-# sample = random.choice
+sample = open(f'{subject}_reading_tasks/sample_{n}.txt', 'r',
+              encoding="utf8")
 
+# sample = random.choice
+# @st.cache_data()
 def reading_task(sample):
     task_container.write("Read the article below to start your assessment")
     # ar_container.subheader(f"Academic Reading test 1 - section 1 practice test")
@@ -28,38 +36,40 @@ def reading_task(sample):
             You should spend about 20 minutes on Questions 1–13, \
                 which are based on Reading Passage 1 below.")
     ar_container.write(sample.read())
-    return sample
+    return sample.read()
 
 # text_for_making_quiz = None
-if st.button("Get reading task"):
-    # display reading task
-    # load the reading into a variable
+
+if 'count' not in st.session_state:
+	st.session_state.count = 0
+
+def increment_counter():
+	st.session_state.count += 1
+ 
+if st.button("Get reading task", on_click=increment_counter):
+    if st.session_state.count > 5:
+        st.session_state.count = 1
+        
+    n = st.session_state.count
+    st.text(f"Reading Task #: {n}")
+    sample = open(f'{subject}_reading_tasks/sample_{n}.txt', 'r',
+              encoding="utf8")
     task_container = st.container()
     ar_container = st.container()
-    sample = reading_task(sample)
-#    text_for_making_quiz = sample.read()
+    reading_task(sample)
+    
+
+    st.session_state.sample_text = open(f'{subject}_reading_tasks/sample_{n}.txt', 'r',
+            encoding="utf8").read()
+    with st.expander("show sample_text"):
+        st.write(st.session_state.sample_text)
+    
 else:
     st.markdown("Push button")
+    with st.expander("Show last reading task"):
+        # st.write(st.session_state.sample_text)
+        st.write(st.session_state.sample_text)
 
-st.subheader("Score Form")
-
-with st.form("my_form"):
-   st.write("Please enter your answer below, kindly separate by commas")
-   st.text_input("Please enter the answer of questions 1-6")
-   st.text_input("Please enter the answer of questions 7-12")
-   st.text_input("Please enter the answer of questions 13-18")
-   st.text_input("Please enter the answer of questions 19-25")
-
-   # Every form must have a submit button.
-   submitted = st.form_submit_button("Submit")
-   if submitted:
-       s = random.randint(8, 22)
-       st.write("Your score is:", s)
-
-"""if st.button("Get Score"):
-        s = random.randint(8, 22)
-        ar_container.write(f"{s}")
-"""
 #####################################
 ## MC QUESTIONS ##
 ##################################
@@ -68,17 +78,19 @@ with st.form("my_form"):
 n_input = st.number_input("Number of questions to generate.", 
                               min_value=1,
                               max_value=10, 
-                              value=3)
+                              value=2)
 n_int = int(n_input)
 
 @st.cache_data(show_spinner = f"Generating {n_int} questions from summary...")
 def generate_questions(text, n_int):
     return mc_questions_json(text, n=n_int)
 
+
 # maps integers to letters for keeping track of answers
 int2letter = {0:"A", 1:"B", 2:"C", 3:"D"}
 letter2int = {"A":0, "B":1, "C":2, "D":3}
 if "current_question" not in st.session_state:
+    st.session_state.questions_json = None
     st.session_state.answers = {} 
     st.session_state.current_question = 1 # keeps track of current question number
     st.session_state.questions = [] 
@@ -91,10 +103,14 @@ def reset_answers():
     st.session_state.wrong_answers = 0 # count of wrong answers
     st.session_state.current_question = 1 # keeps track of current question number
 
-questions_json = generate_questions(sample.read(), n_int)
+if st.button("Generate Questions"):
+    questions_json = generate_questions(st.session_state.sample_text, n_int)
+    st.session_state.questions_json = questions_json
+    
 
 def display_question():
     # Handle first case
+    questions_json = st.session_state.questions_json
     if len(st.session_state.questions) == 0:
         try:
             first_question = questions_json['questions'][0]
@@ -166,7 +182,9 @@ def display_question():
 
 
     # Define a function to go to the next question
+
 def next_question():
+    questions_json = st.session_state.questions_json
     # Move to the next question in the questions list
     if st.session_state.current_question == n_int:
         st.caption("No more questions")
@@ -209,27 +227,69 @@ with col2:
     display_question()
     
 with st.sidebar: # update sidebar with newly submitted answers
-    with st.expander("Questions JSON"):
-        st.json(questions_json)
-    with st.expander(f"Submitted answers"):
-        st.write(st.session_state.answers)
+    # with st.expander("Questions JSON"):
+    #     st.json(questions_json)
+    # with st.expander(f"Submitted answers"):
+    #     st.write(st.session_state.answers)
+    st.subheader("Multiple choice score:")
     # display counter for right and wrong answers
-    st.success(f"Right answers: {st.session_state.right_answers}")
-    st.error(f"Wrong answers: {st.session_state.wrong_answers}")
+    st.caption(f"Right answers: {st.session_state.right_answers}")
+    st.caption(f"Wrong answers: {st.session_state.wrong_answers}")
 
 if st.sidebar.button("🔄 Reset quiz"):
     reset_answers()
     st.experimental_rerun()
-    
+
 ####################################
 ####  END_OF_QUIZ
 ##################################
 
 
+###########################################
+#### FILL IN THE BLANK (FITB) EXERICES ####
+###########################################
+if "fitb" not in st.session_state:
+    print("---> resetting FITB")
+    st.session_state["fitb"] = None
 
 
-st.subheader("List of mistakes")
-with st.expander("expand list"):
-    st.write("Question 3")
+n_fitb = st.number_input("How many FITB questions to generate.", 
+                              min_value=1,
+                              max_value=5, 
+                              value=3)
+n_fitb = int(n_fitb)
 
-st.subheader("Suggestions")
+# st.subheader("Score Form")
+if st.button("Generate Fill in the Blank Exercises"):
+    st.session_state.fitb = fitb_generate(st.session_state.sample_text, n= n_fitb)
+    
+with st.form("my_form"):
+    fitb_json = st.session_state.fitb
+    answer_list = []
+    for i, exercise in enumerate(fitb_json):
+        st.write(exercise["incomplete_sentence"])
+        answer = st.text_input(f"Input correct word #{i+1}")
+        if answer == "":
+            pass
+        elif answer == exercise["correct_word"][0]:
+            st.success("✅ Correct")
+        else:
+            st.warning("⭕ Try again")
+
+    with st.expander("Cheat sheet 🤫"):
+        st.write(fitb_json)
+        
+
+    # Every form must have a submit button.
+    submitted = st.form_submit_button("Submit")
+    if submitted:
+        s = random.randint(8, 22)
+        st.write("Your score is:", s)
+
+
+
+# st.subheader("List of mistakes")
+# with st.expander("expand list"):
+#     st.write("Question 3")
+
+# st.subheader("Suggestions")
