@@ -4,7 +4,9 @@ import json
 from gpt_functions import (get_writing_score, 
                            spelling_finder, 
                            find_word_positions, 
-                           wrap_words_in_text)
+                           wrap_words_in_text,
+                           full_grammar_corrector,
+                           create_suggestions)
 import pandas as pd
 
 from st_pages import Page, show_pages, add_page_title
@@ -85,21 +87,56 @@ if st.button("Evaluate my writing"):
 
     
     
-st.subheader("List of mistakes")
+st.subheader("Spelling")
 spelling_err = None
-if st.session_state.user_writing != "None" or st.session_state.user_writing != "":
-    spelling_err = spelling_finder(st.session_state.user_writing)
 
-with st.expander("Spelling mistakes"):
-    # st.write(spelling_err)
-    st.write(pd.DataFrame(spelling_err))
+find_spelling_errors = st.checkbox("Find Spelling Errors")
+if find_spelling_errors:
+    if st.session_state.user_writing != "None" or st.session_state.user_writing != "":
+        spelling_err = spelling_finder(st.session_state.user_writing)
 
-with st.expander("highlights"):
-    writing = st.session_state.user_writing
-    highlighted = wrap_words_in_text(writing, spelling_err['mistakes'])
-    st.markdown(highlighted)
+    # with st.container():
+    with st.expander("List"):
+        # st.write(spelling_err)
+        if spelling_err is not None:
+            st.write(pd.DataFrame(spelling_err))
+
+    with st.expander("Highlighted"):
+        writing = st.session_state.user_writing
+        highlighted = wrap_words_in_text(writing, spelling_err['mistakes'])
+        st.markdown(highlighted)
     
-st.subheader("Suggestions")
+st.subheader("Grammar Errors")
+grammar_err = None
+find_grammar_errors = st.checkbox("Find Grammar Errors")
+if find_grammar_errors:
+    if st.session_state.user_writing != "None" or st.session_state.user_writing != "":
+        grammar_err = full_grammar_corrector(st.session_state.user_writing)
+    
+    with st.expander("List"):
+        if grammar_err is not None:
+            st.write(grammar_err[["Sentences", "Corrected"]])
+    
+    # with st.expander("Highlighted"):
+    #     if grammar_err is not None:
+    #         writing = st.session_state.user_writing
+    #         corr_list= list(grammar_err['Corrected'])
+    #         corrected = [s for s in corr_list if s != 'None']
+    #         st.write(corrected)
+    #         highlighted_sentences = wrap_words_in_text(writing, corrected)
+    #         st.markdown(highlighted_sentences)
+
+
+st.subheader("Suggestion Improvements")
+generate_suggestions = st.checkbox("Generate suggestions")
+
+if generate_suggestions:
+    if st.session_state.user_writing != "None" or st.session_state.user_writing != "":
+        
+        suggestions = create_suggestions(st.session_state.user_writing)
+        
+        st.write(suggestions)
+        
 
 
 

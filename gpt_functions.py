@@ -2,6 +2,7 @@ import openai
 import json 
 import os
 import re
+import pandas as pd
 
 
 from dotenv import load_dotenv, find_dotenv
@@ -206,3 +207,101 @@ def get_writing_score(writing_text, task_question, test_choice="ielts"):
     print("JSONDecoderError")
 
   return result
+
+
+def grammar_judge(sentence):
+  # herlper function, find grammar error.
+    system_prompt = '''
+                    Determine if the sentence has grammar mistakes. /
+                    If the sentence has grammar mistakes, output 'True' , /
+                    otherwise output 'False'. Only output true or false, nothing else.
+                    '''
+    user_prompt = f"{sentence}"
+    result = chat_completion(prompt = user_prompt,
+                             system_prompt = system_prompt,
+                             model = "gpt-3.5-turbo",
+                             temperature=0)
+
+    return result
+  
+
+def correct_sentence(sentence):
+  # helper function, correct the sentences from grammar error.
+    system_prompt = '''
+                    You are an ai assistant that helps students \
+                    correct and practice their english writing, \
+                    the following sentence has grammar mistakes, \
+                    correct them and output only the corrected sentence, nothing else.
+                    '''
+    user_prompt = f"{sentence}"
+    result = chat_completion(prompt = user_prompt,
+                             system_prompt = system_prompt,
+                             model = "gpt-3.5-turbo",
+                             temperature=0)
+
+    return result
+  
+def find_sentence_positions(para, sentence):
+  # helper function, help find the position of the sentences
+    """find positions of words in text"""
+    positions = []
+    p_start = para.index(sentence)
+    p_end = p_start + len(sentence)
+    mistake = para[p_start: p_end]
+    # print(mistake)
+    positions.append((p_start, p_end))
+    return positions
+  
+def full_grammar_corrector(text):
+  # main function
+  # split text into sentences
+  # run the grammar_judge on each sentence
+    import re
+    sentence = text.split('\n')
+
+    sentences = []
+    sentence_lst = []
+    for i in sentence:
+        s = re.findall(r"[^.!?]+", i)
+        sentences = sentences + s
+    for s in sentences:
+        if s != ' ':
+            sentence_lst.append(s)
+
+    df = []
+    for s in sentence_lst:
+        grammar = grammar_judge(s)
+        if grammar == "True":
+            corrected = correct_sentence(s)
+        else:
+            corrected = 'None'
+        sentence_positions = find_sentence_positions(text, s)
+        df.append({
+                        'Sentences': s,
+                        'Error': grammar,
+                        'Corrected': corrected,
+                        'Position': sentence_positions})
+    return pd.DataFrame(df)
+  
+  
+def create_suggestions(user_writing, model = "gpt-3.5-turbo"):
+  
+  system_prompt = '''
+                  You are a professional IELTS writing examiner, \
+                  provide suggestions for improving writing on the following paragraph \
+                  based on the four criteria in IELTS writing, \
+                  Task achievement, Coherence and cohesion, Lexical resource, and Grammatical range and accuracy. \
+                  Output only the suggestions, and in four different paragraphs, each represent one criteria.
+                  '''
+  user_prompt = f"{user_writing}"
+  lst = chat_completion(prompt = user_prompt, 
+                        system_prompt = system_prompt, 
+                        model = model, 
+                        temperature=0)
+
+  sentence = lst.split('\n\n')
+  results = []
+  for el in sentence:
+      sub = el.split(', ')
+      results.append(sub)
+  return results
