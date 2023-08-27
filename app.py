@@ -1,7 +1,11 @@
 import streamlit as st
 import random
 import json
-from gpt_functions import get_writing_score
+from gpt_functions import (get_writing_score, 
+                           spelling_finder, 
+                           find_word_positions, 
+                           wrap_words_in_text)
+import pandas as pd
 
 from st_pages import Page, show_pages, add_page_title
 
@@ -82,8 +86,19 @@ if st.button("Evaluate my writing"):
     
     
 st.subheader("List of mistakes")
-with st.expander("expand list"):
-    st.write("list of mistakes")
+spelling_err = None
+if st.session_state.user_writing != "None" or st.session_state.user_writing != "":
+    spelling_err = spelling_finder(st.session_state.user_writing)
+
+with st.expander("Spelling mistakes"):
+    # st.write(spelling_err)
+    st.write(pd.DataFrame(spelling_err))
+
+with st.expander("highlights"):
+    writing = st.session_state.user_writing
+    highlighted = wrap_words_in_text(writing, spelling_err['mistakes'])
+    st.markdown(highlighted)
+    
 st.subheader("Suggestions")
 
 

@@ -2,7 +2,10 @@ import streamlit as st
 import random
 import json
 from langchain.chat_models import ChatOpenAI
-from gpt_functions import mc_questions_json, fitb_generate
+from gpt_functions import (mc_questions_json, 
+                           fitb_generate, 
+                           find_word_positions,
+                           same_meaning)
 
 if 'sample_text' not in st.session_state:
     print("---> Resetting sample_text")
@@ -261,35 +264,30 @@ n_fitb = int(n_fitb)
 
 # st.subheader("Score Form")
 if st.button("Generate Fill in the Blank Exercises"):
-    st.session_state.fitb = fitb_generate(st.session_state.sample_text, n= n_fitb)
+    st.session_state.fitb = fitb_generate(st.session_state.sample_text, 
+                                          n= n_fitb,
+                                          model='gpt-3.5-turbo')
     
-with st.form("my_form"):
+with st.container():
+    synonyms_allowed = st.checkbox("Synonyms Allowed")
+    
     fitb_json = st.session_state.fitb
     answer_list = []
     for i, exercise in enumerate(fitb_json):
+        st.markdown(f"**Exercise #{i+1}**")
         st.write(exercise["incomplete_sentence"])
         answer = st.text_input(f"Input correct word #{i+1}")
+        
         if answer == "":
             pass
-        elif answer == exercise["correct_word"][0]:
+        elif answer == exercise["missing_word"]:
             st.success("✅ Correct")
         else:
-            st.warning("⭕ Try again")
+            if synonyms_allowed and same_meaning(answer, exercise['missing_word']):
+                st.info("✅ Good Enough")
+            else:
+                st.warning("⭕ Try again")
 
     with st.expander("Cheat sheet 🤫"):
         st.write(fitb_json)
         
-
-    # Every form must have a submit button.
-    submitted = st.form_submit_button("Submit")
-    if submitted:
-        s = random.randint(8, 22)
-        st.write("Your score is:", s)
-
-
-
-# st.subheader("List of mistakes")
-# with st.expander("expand list"):
-#     st.write("Question 3")
-
-# st.subheader("Suggestions")

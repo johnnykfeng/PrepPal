@@ -1,7 +1,9 @@
 import openai
 import json 
 import os
-# Lisa, make sure to install python-dotenv in the new version
+import re
+
+
 from dotenv import load_dotenv, find_dotenv
 _ = load_dotenv(find_dotenv())
 
@@ -29,14 +31,17 @@ def chat_completion(prompt,
 
     return response['choices'][0]['message']['content']
 
-def spelling_mistakes(user_writing):
+def spelling_finder(user_writing, chat_model="gpt-4"):
   system_prompt = '''Given the following piece of writing, \
-    find all the spelling mistakes and the index positions of each mistake. \
-      Output the mistakes as a JSON as such:
-  {{"spelling": [<spelling mistake 1>, <spelling mistake 2>, ...]'''
+  find all the spelling mistakes in the text. \
+  Output the mistakes as JSON with the following format:\
+  {{"mistakes": ["<spelling mistake 1>", "<spelling mistake 2>", ...]\
+    "correction":["<correct spelling 1>", "<correct spelling 2>, ...]}}'''
 
   user_prompt = f"{user_writing}"
-  result = chat_completion(prompt=user_prompt, system_prompt=system_prompt, model="gpt-4")
+  result = chat_completion(prompt=user_prompt, 
+                           system_prompt=system_prompt, 
+                           model=chat_model)
   try:
     mistakes_json = json.loads(result)
   except json.JSONDecodeError:
@@ -55,16 +60,30 @@ def find_word_positions(text, words):
     positions.append((p_start, p_end))
   return positions
 
-def find_positions(text, words): 
-  """find positions of words in text"""
-  positions = []
-  for word in words:
-    p_start = text.index(word)
-    p_end = p_start + len(word)
-    mistake = text[p_start: p_end]
-    print(mistake)
-    positions.append((p_start, p_end))
-  return position
+def wrap_words_in_text(text, word_list):
+    for word in word_list:
+        text = text.replace(word, f"**[{word}]**")
+        # text = text.replace(word, f"<ins>{word}</ins>")
+    return text
+
+def contains_word(s, word):
+    return re.search(f'\\b{word}\\b', s) is not None
+
+def same_meaning(word1, word2, model ='gpt-4'):
+
+  system = """You are a helpful assistant that helps students practice for their english proficieny exams. \
+  Given the following two words enclosed in double square brackets [[]], \
+  determine if they are synonyms or have the similar meaning. \
+  Format the output as 'True' or 'False', nothing else. 'True' if they have the similar meaning, \
+  'False' otherwise."""
+
+  user_prompt = f"Two words to compare: [[{word1}]], [[{word2}]]"
+  result = chat_completion(user_prompt, system_prompt = system, model = model)
+
+  if contains_word(result, "True"):
+    return True
+  else:
+    return False
 
 
 def mc_questions_json(text, n=5):
@@ -104,19 +123,27 @@ def mc_questions_json(text, n=5):
     json_result = result
   return json_result
 
-def fitb_generate(reading_task, n=3, test_choice='ielts'):
+def fitb_generate(reading_task, 
+                  n=3, 
+                  test_choice='ielts', 
+                  model='gpt-3.5-turbo',
+                  temperature = 0.4):
+  
   system_prompt = f'''Given the reading task for {test_choice.upper()} \
   english proficiency test delimted in \
   triple backticks ```, generate {n} fill in the blank exercises \
   based on the contents of the text. The intent of these exercises \
-  is to quiz the reader. Format the output as a JSON file as follows:\
-  [{{"incomplete_sentence": "<sentence with missing word as blank `___`>", "correct_word": \
-  [<list of correct word or words>]}}]
+  is to quiz the reader. Do not copy sentences from the given reading task, \
+  create new sentence that relate to the content of the reading. \
+  Format the output as a JSON file as follows:\
+  [{{"incomplete_sentence": "<sentence with missing word as `___`>", "missing_word": \
+  <missing word from the incomplete sentence>}}]
   '''
   user_prompt = f'Here is the reading task: ```{reading_task}```'
   result = chat_completion(prompt=user_prompt,
                             system_prompt=system_prompt,
-                            temperature=0)
+                            model=model,
+                            temperature=temperature)
   try:
     fitb = json.loads(result)
   except Exception as e:
