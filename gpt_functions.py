@@ -209,7 +209,7 @@ def get_writing_score(writing_text, task_question, test_choice="ielts"):
   return result
 
 
-def grammar_judge(sentence):
+def grammar_judge(sentence, model = "gpt-4"):
   # herlper function, find grammar error.
     system_prompt = '''
                     Determine if the sentence has grammar mistakes. /
@@ -219,7 +219,7 @@ def grammar_judge(sentence):
     user_prompt = f"{sentence}"
     result = chat_completion(prompt = user_prompt,
                              system_prompt = system_prompt,
-                             model = "gpt-3.5-turbo",
+                             model = model,
                              temperature=0)
 
     return result
@@ -256,7 +256,6 @@ def full_grammar_corrector(text):
   # main function
   # split text into sentences
   # run the grammar_judge on each sentence
-    import re
     sentence = text.split('\n')
 
     sentences = []
@@ -273,8 +272,12 @@ def full_grammar_corrector(text):
         grammar = grammar_judge(s)
         if grammar == "True":
             corrected = correct_sentence(s)
+            if corrected == s + ".":
+                corrected = 'None'
+                grammar = 'False'
         else:
             corrected = 'None'
+            grammar = 'False'
         sentence_positions = find_sentence_positions(text, s)
         df.append({
                         'Sentences': s,
@@ -284,24 +287,16 @@ def full_grammar_corrector(text):
     return pd.DataFrame(df)
   
   
-def create_suggestions(user_writing, model = "gpt-3.5-turbo"):
-  
-  system_prompt = '''
-                  You are a professional IELTS writing examiner, \
-                  provide suggestions for improving writing on the following paragraph \
-                  based on the four criteria in IELTS writing, \
-                  Task achievement, Coherence and cohesion, Lexical resource, and Grammatical range and accuracy. \
-                  Output only the suggestions, and in four different paragraphs, each represent one criteria.
-                  '''
-  user_prompt = f"{user_writing}"
-  lst = chat_completion(prompt = user_prompt, 
-                        system_prompt = system_prompt, 
-                        model = model, 
-                        temperature=0)
+def create_suggestions(user_writing, model = "gpt-4"):
+    system_prompt = '''
+                    You are a professional IELTS writing examiner, \
+                    provide suggestions for improving writing on the following paragraph \
+                    based on the four criteria in IELTS writing, \
+                    Task achievement, Coherence and cohesion, Lexical resource, and Grammatical range and accuracy. \
+                    Output only the suggestions, and in four different paragraphs, each represent one criteria.
+                    '''
+    user_prompt = f"{user_writing}"
+    lst = chat_completion(prompt = user_prompt, system_prompt = system_prompt, model = model, temperature=0)
 
-  sentence = lst.split('\n\n')
-  results = []
-  for el in sentence:
-      sub = el.split(', ')
-      results.append(sub)
-  return results
+    sentence = lst.split('\n\n')
+    return sentence

@@ -266,13 +266,14 @@ n_fitb = int(n_fitb)
 if st.button("Generate Fill in the Blank Exercises"):
     st.session_state.fitb = fitb_generate(st.session_state.sample_text, 
                                           n= n_fitb,
-                                          model='gpt-3.5-turbo')
+                                          model='gpt-4')
     
 with st.container():
     synonyms_allowed = st.checkbox("Synonyms Allowed")
     
     fitb_json = st.session_state.fitb
     answer_list = []
+    print(type(fitb_json))
     for i, exercise in enumerate(fitb_json):
         st.markdown(f"**Exercise #{i+1}**")
         st.write(exercise["incomplete_sentence"])

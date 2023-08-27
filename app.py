@@ -10,6 +10,11 @@ from gpt_functions import (get_writing_score,
 import pandas as pd
 
 from st_pages import Page, show_pages, add_page_title
+from PIL import Image
+
+image = Image.open(r'C:\Users\johnk\Projects-code\PrepPal\logo.jpeg')
+
+st.image(image)
 
 show_pages(
     [
@@ -18,7 +23,7 @@ show_pages(
     ]
 )
 
-st.title("PrepPal")
+st.title("Writing test")
 st.subheader("Pass your English test with the power of AI")
 
 test_choice = st.radio("What are you studying for?",
@@ -115,7 +120,7 @@ if find_grammar_errors:
     
     with st.expander("List"):
         if grammar_err is not None:
-            st.write(grammar_err[["Sentences", "Corrected"]])
+            st.dataframe(grammar_err[["Sentences", "Corrected"]])
     
     # with st.expander("Highlighted"):
     #     if grammar_err is not None:
@@ -133,7 +138,8 @@ generate_suggestions = st.checkbox("Generate suggestions")
 if generate_suggestions:
     if st.session_state.user_writing != "None" or st.session_state.user_writing != "":
         
-        suggestions = create_suggestions(st.session_state.user_writing)
+        suggestions = create_suggestions(st.session_state.user_writing, 
+                                         model="gpt-3.5-turbo")
         
         st.write(suggestions)
         
