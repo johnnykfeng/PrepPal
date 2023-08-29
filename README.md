@@ -1,9 +1,11 @@
 
-# PrepPal
-## ChatGPT-based Writing and Reading Proficiency Evaluator
+![Alt text](logo.jpeg "logo")
+
+# ChatGPT-based Writing and Reading Proficiency Evaluator
 
 This project uses the ChatGPT API to evaluate students' writing and reading proficiency tailored for exams such as IELTS. Deployed using Streamlit, this tool offers an interactive interface for educators and students alike.
 
+[Pitch Deck](https://docs.google.com/presentation/d/1K5R1EqNaB_1PF3__VHCqVmuKlmQAU5qk7C30wgXWBjQ/edit?usp=sharing)
 <!-- ![Screenshot of the application](path_to_screenshot.png) *Replace with an actual screenshot link* -->
 
 ## Features
