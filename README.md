@@ -47,10 +47,7 @@ This project uses the ChatGPT API to evaluate students' writing and reading prof
    - Click 'Get writing task' to cycle through a pre-saved writing tasks
    - Input your passage in the provided text box.
    - Click 'Evaluate my writing' and wait for the feedback.
-   - Optionally check spelling, grammar, and suggest improvements
-<br>
-<br>
-
+   - Optionally check spelling, grammar, and suggest improvements<br>
 4. For Reading Assessment:
    - Click 'Get reading task'
    - Read the given passage.
