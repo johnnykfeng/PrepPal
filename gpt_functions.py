@@ -32,7 +32,9 @@ def chat_completion(prompt,
 
     return response['choices'][0]['message']['content']
 
-def spelling_finder(user_writing, chat_model="gpt-4"):
+def spelling_finder(user_writing, chat_model="gpt-3.5-turbo"):
+  # helper function, find spelling mistakes
+  # works much better with gpt-4
   system_prompt = '''Given the following piece of writing, \
   find all the spelling mistakes in the text. \
   Output the mistakes as JSON with the following format:\
@@ -70,7 +72,7 @@ def wrap_words_in_text(text, word_list):
 def contains_word(s, word):
     return re.search(f'\\b{word}\\b', s) is not None
 
-def same_meaning(word1, word2, model ='gpt-4'):
+def same_meaning(word1, word2, model ='gpt-3.5-turbo'):
 
   system = """You are a helpful assistant that helps students practice for their english proficieny exams. \
   Given the following two words enclosed in double square brackets [[]], \
@@ -88,6 +90,8 @@ def same_meaning(word1, word2, model ='gpt-4'):
 
 
 def mc_questions_json(text, n=5):
+  """Generate multiple choice questions based on the contents of the text.
+  """
   system_prompt = """Given the corpus of text, \
   generate {n} multiple choice questions\
   based on the contents of the text. The goal of the these questions is to \
@@ -129,6 +133,18 @@ def fitb_generate(reading_task,
                   test_choice='ielts', 
                   model='gpt-3.5-turbo',
                   temperature = 0.4):
+  """Generate fill in the blank exercises based on the contents of the text.
+
+  Args:
+      reading_task (str): long form text like a reading task.
+      n (int, optional): Number of exercises to generate. Defaults to 3.
+      test_choice (str, optional): _description_. Defaults to 'ielts'.
+      model (str, optional): _description_. Defaults to 'gpt-3.5-turbo'.
+      temperature (float, optional): _description_. Defaults to 0.4.
+
+  Returns:
+      _type_: _description_
+  """
   
   system_prompt = f'''Given the reading task for {test_choice.upper()} \
   english proficiency test delimted in \
@@ -209,7 +225,7 @@ def get_writing_score(writing_text, task_question, test_choice="ielts"):
   return result
 
 
-def grammar_judge(sentence, model = "gpt-4"):
+def grammar_judge(sentence, model = "gpt-3.5-turbo"):
   # herlper function, find grammar error.
     system_prompt = '''
                     Determine if the sentence has grammar mistakes. /
@@ -287,7 +303,7 @@ def full_grammar_corrector(text):
     return pd.DataFrame(df)
   
   
-def create_suggestions(user_writing, model = "gpt-4"):
+def create_suggestions(user_writing, model = "gpt-3.5-turbo"):
     system_prompt = '''
                     You are a professional IELTS writing examiner, \
                     provide suggestions for improving writing on the following paragraph \

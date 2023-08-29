@@ -100,9 +100,7 @@ if find_spelling_errors:
     if st.session_state.user_writing != "None" or st.session_state.user_writing != "":
         spelling_err = spelling_finder(st.session_state.user_writing)
 
-    # with st.container():
     with st.expander("List"):
-        # st.write(spelling_err)
         if spelling_err is not None:
             st.write(pd.DataFrame(spelling_err))
 
@@ -122,7 +120,7 @@ if find_grammar_errors:
         if grammar_err is not None:
             st.dataframe(grammar_err[["Sentences", "Corrected"]])
     
-    # with st.expander("Highlighted"):
+    # with st.expander("Highlighted Grammar Errors"):
     #     if grammar_err is not None:
     #         writing = st.session_state.user_writing
     #         corr_list= list(grammar_err['Corrected'])
@@ -143,9 +141,3 @@ if generate_suggestions:
         
         st.write(suggestions)
         
-
-
-
-
-
-

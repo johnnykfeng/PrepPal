@@ -11,28 +11,23 @@ if 'sample_text' not in st.session_state:
     print("---> Resetting sample_text")
     st.session_state['sample_text'] = "None"
     
+if 'count' not in st.session_state:
+	st.session_state.count = 0
 
-
+def increment_counter():
+	st.session_state.count += 1
+    
 st.title("Reading Comprehension")
 st.subheader("Pass your English test with the power of AI")
 
 test_choice = st.radio("What are you studying for?",
                        options=["IELTS", "CELPIP"])
 
-subject = test_choice
-n = random.randint(1, 5)
-
 st.text(f"We will help you study for {test_choice}")
 
-s = "0"
-
-sample = open(f'{subject}_reading_tasks/sample_{n}.txt', 'r',
-              encoding="utf8")
-
-# sample = random.choice
 # @st.cache_data()
 def reading_task(sample):
-    task_container.write("Read the article below to start your assessment")
+    task_container.info("Read the article below to start your assessment")
     # ar_container.subheader(f"Academic Reading test 1 - section 1 practice test")
     ar_container.caption(
         "This is the first section of your IELTS Reading test. \
@@ -41,28 +36,20 @@ def reading_task(sample):
     ar_container.write(sample.read())
     return sample.read()
 
-# text_for_making_quiz = None
-
-if 'count' not in st.session_state:
-	st.session_state.count = 0
-
-def increment_counter():
-	st.session_state.count += 1
- 
 if st.button("Get reading task", on_click=increment_counter):
     if st.session_state.count > 5:
         st.session_state.count = 1
         
     n = st.session_state.count
     st.text(f"Reading Task #: {n}")
-    sample = open(f'{subject}_reading_tasks/sample_{n}.txt', 'r',
+    sample = open(f'{test_choice}_reading_tasks/sample_{n}.txt', 'r',
               encoding="utf8")
     task_container = st.container()
     ar_container = st.container()
     reading_task(sample)
     
 
-    st.session_state.sample_text = open(f'{subject}_reading_tasks/sample_{n}.txt', 'r',
+    st.session_state.sample_text = open(f'{test_choice}_reading_tasks/sample_{n}.txt', 'r',
             encoding="utf8").read()
     with st.expander("show sample_text"):
         st.write(st.session_state.sample_text)
@@ -74,9 +61,8 @@ else:
         st.write(st.session_state.sample_text)
 
 #####################################
-## MC QUESTIONS ##
+## MULTIPLE CHOICE QUESTIONS ##
 ##################################
-
 
 n_input = st.number_input("Number of questions to generate.", 
                               min_value=1,
@@ -106,11 +92,10 @@ def reset_answers():
     st.session_state.wrong_answers = 0 # count of wrong answers
     st.session_state.current_question = 1 # keeps track of current question number
 
-if st.button("Generate Questions"):
+if st.button("Generate Multiple Choice Questions"):
     questions_json = generate_questions(st.session_state.sample_text, n_int)
     st.session_state.questions_json = questions_json
     
-
 def display_question():
     # Handle first case
     questions_json = st.session_state.questions_json
@@ -180,11 +165,6 @@ def display_question():
 
     elif submit_button_disabled:
         show_answer()
-
-    # Display the current score
-
-
-    # Define a function to go to the next question
 
 def next_question():
     questions_json = st.session_state.questions_json
@@ -266,7 +246,7 @@ n_fitb = int(n_fitb)
 if st.button("Generate Fill in the Blank Exercises"):
     st.session_state.fitb = fitb_generate(st.session_state.sample_text, 
                                           n= n_fitb,
-                                          model='gpt-4')
+                                          model='gpt-3.5-turbo')
     
 with st.container():
     synonyms_allowed = st.checkbox("Synonyms Allowed")
@@ -291,4 +271,8 @@ with st.container():
 
     with st.expander("Cheat sheet 🤫"):
         st.write(fitb_json)
+        
+###########################################
+#### END OF FITB EXERCISES ####
+###########################################
         
