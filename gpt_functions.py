@@ -4,7 +4,6 @@ import os
 import re
 import pandas as pd
 
-
 from dotenv import load_dotenv, find_dotenv
 _ = load_dotenv(find_dotenv())
 
@@ -87,7 +86,6 @@ def same_meaning(word1, word2, model ='gpt-3.5-turbo'):
     return True
   else:
     return False
-
 
 def mc_questions_json(text, n=5):
   """Generate multiple choice questions based on the contents of the text.

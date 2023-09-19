@@ -1,16 +1,17 @@
-import streamlit as st
 import random
 import json
+import pandas as pd
+import streamlit as st
+from st_pages import Page, show_pages, add_page_title
+from PIL import Image
 from gpt_functions import (get_writing_score, 
                            spelling_finder, 
                            find_word_positions, 
                            wrap_words_in_text,
                            full_grammar_corrector,
                            create_suggestions)
-import pandas as pd
 
-from st_pages import Page, show_pages, add_page_title
-from PIL import Image
+from components.user_apikey import user_input_apikey
 
 image = Image.open(r'C:\Users\johnk\Projects-code\PrepPal\logo.jpeg')
 
@@ -22,6 +23,11 @@ show_pages(
         Page("pages/reading.py", "Reading test", "📖")
     ]
 )
+
+# module that allows user to enter API key on the sidebar
+user_input_apikey()
+
+OPENAI_API_KEY = st.session_state['api_key']
 
 st.title("Writing test")
 st.subheader("Pass your English test with the power of AI")
