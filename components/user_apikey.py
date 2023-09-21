@@ -1,5 +1,7 @@
 import streamlit as st
 import openai
+from loguru import logger
+
 
 def api_test(api_key, model="gpt-3.5-turbo"): 
     try:
@@ -10,19 +12,18 @@ def api_test(api_key, model="gpt-3.5-turbo"):
             messages=[{"role": "user", "content": "Hello"}]
         )
     except Exception as e:
-        print(f"{str(e)}")
+        logger.warning(f"{str(e)}")
         return False
     
     return True
 
 # --- Displaying session state info on sidebar --- #
-# sidebar_placeholder = st.sidebar.empty()
-# def sidebar_session_state(sidebar_placeholder=sidebar_placeholder):
 def sidebar_session_state():
+    """_summary_: Display session state info on sidebar expander
+    """
     sidebar_placeholder = st.sidebar.empty()
     
     with sidebar_placeholder.expander("Session State", expanded=False):
-
         st.markdown(f"🔑 **API Key**:\n{st.session_state['api_key'][:5]}... ")
         
         if st.session_state['api_key_check']:
@@ -31,6 +32,11 @@ def sidebar_session_state():
             st.markdown("❌ Key is invalid ")
 
 def user_input_apikey():
+    """_summary_: Display API key input form on sidebar
+
+    Returns:
+        _type_: st.session_state
+    """
     # --- ENTERING API KEY --- #
     with st.sidebar.form('myform', clear_on_submit=False):
         # initialize session states
@@ -38,7 +44,7 @@ def user_input_apikey():
             st.session_state['api_key'] = "None"
             st.session_state['api_key_check'] = False
 
-        input_key = st.text_input('🔑 Enter your OpenAI API Key', 
+        input_key = st.text_input('🔑 Enter your OpenAI API Key \n or password', 
                                     type='password', 
                                     disabled=False)
         
@@ -47,18 +53,19 @@ def user_input_apikey():
                                         disabled=False )
 
         if submitted: # trigger when submit button is clicked
-            st.session_state['api_key'] = input_key
-            # test if API key is valid
-            if api_test(st.session_state['api_key']): 
+            if input_key == st.secrets["PASSWORD"]: 
+                st.session_state['api_key'] = st.secrets["OPENAI_API_KEY"]
                 st.session_state['api_key_check'] = True
-                st.success("✅ API Key is valid")
+                st.success("✅ Password is correct")
             else:
-                st.session_state['api_key_check'] = False
-                st.error("❌ API Key is invalid")
-                
-        # give warning message if not valid
-        # if (not st.session_state['api_key_check']) and (st.session_state['api_key'] != "None"):
-        #     st.warning("Please enter a valid OpenAI API Key")
+                st.session_state['api_key'] = input_key
+                # test if API key is valid
+                if api_test(st.session_state['api_key']): 
+                    st.session_state['api_key_check'] = True
+                    st.success("✅ API Key is valid")
+                else:
+                    st.session_state['api_key_check'] = False
+                    st.error("❌ API Key is invalid")
         
         sidebar_session_state() # display new session state info on sidebar
 

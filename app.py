@@ -1,6 +1,7 @@
 import random
 import json
 import pandas as pd
+import openai
 import streamlit as st
 from st_pages import Page, show_pages, add_page_title
 from PIL import Image
@@ -25,9 +26,11 @@ show_pages(
 )
 
 # module that allows user to enter API key on the sidebar
-user_input_apikey()
+st.session_state['api_key'], st.session_state['api_key_check'] = user_input_apikey()
 
-OPENAI_API_KEY = st.session_state['api_key']
+openai.api_key = st.session_state['api_key']
+
+# OPENAI_API_KEY = st.session_state['api_key']
 
 st.title("Writing test")
 st.subheader("Pass your English test with the power of AI")
