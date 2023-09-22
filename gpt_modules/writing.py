@@ -3,7 +3,8 @@ from prompts import (spell_check_system_prompt,
                      same_meaning_system_prompt,
                      same_meaning_user_prompt)
 import json
-import re
+import re 
+from loguru import logger
 
 
 class WritingEvaluator:
@@ -22,28 +23,6 @@ class WritingEvaluator:
         self.max_tokens = 1000
         self.system_prompt = "You are a helpful assistant"
         
-
-    # def chat_completion(self,
-    #                     prompt, 
-    #                     model,
-    #                     system_prompt,
-    #                     api_key):
-
-    #     if api_key is not None:
-    #         openai.api_key = api_key
-
-    #     response = openai.ChatCompletion.create(
-    #         model=model,
-    #         temperature = self.temperature,
-    #         top_p=1.0,
-    #         max_tokens=self.max_tokens,
-    #         messages = [
-    #             {"role": "system", "content": system_prompt},
-    #             {"role": "user", "content": prompt}]
-    #         )
-    #     # return response
-    #     return response['choices'][0]['message']['content']
-        
     def spell_check(self, user_writing):
 
         user_prompt = f"{user_writing}"
@@ -59,11 +38,10 @@ class WritingEvaluator:
         result = result['choices'][0]['message']['content']
         
         try:
-            mistakes_json = json.loads(result)
-        except json.JSONDecodeError:
+            result = json.loads(result)
+        except json.decoder.JSONDecodeError:
             print("JSONDecodeError")
-            mistakes_json = result
-        return mistakes_json
+        return result
 
     def contains_word(self, s, word):
         return re.search(f'\\b{word}\\b', s) is not None
@@ -100,7 +78,7 @@ class WritingEvaluator:
         openai.api_key = api_key
 
 
-    def get_writing_score(writing_text, task_question, test_choice="ielts"):
+    def get_writing_score(self, writing_text, task_question, test_choice="ielts"):
         """
         Calculate the writing score based on a given test type (IELTS or CELPIP).
 
@@ -144,7 +122,8 @@ class WritingEvaluator:
             prompt_template = "Invalid test choice"
 
         # Apply the selected test, insert the writing text, and print the result
-        scoring_prompt = prompt_template.format(question_text=task_question, answer_text=writing_text)
+        scoring_prompt = prompt_template.format(question_text = task_question, 
+                                                answer_text = writing_text)
         result = openai.ChatCompletion.create(
             model=self.default_model,
             temperature = self.temperature,
@@ -152,11 +131,10 @@ class WritingEvaluator:
             messages = [
                 {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": scoring_prompt}
-                ])
+                ])['choices'][0]['message']['content']
 
         try: # convert string to JSON
             result = json.loads(result)
-        except JSONDecodeError:
+        except json.decoder.JSONDecodeError:
             print("JSONDecoderError")
         return result
-
