@@ -40,7 +40,7 @@ class WritingEvaluator:
         try:
             result = json.loads(result)
         except json.decoder.JSONDecodeError:
-            print("JSONDecodeError")
+            logger.error("JSONDecodeError")
         return result
 
     def contains_word(self, s, word):
@@ -136,5 +136,5 @@ class WritingEvaluator:
         try: # convert string to JSON
             result = json.loads(result)
         except json.decoder.JSONDecodeError:
-            print("JSONDecoderError")
+            logger.error("JSONDecoderError")
         return result
