@@ -42,14 +42,14 @@ if st.button("Get reading task", on_click=increment_counter):
         
     n = st.session_state.count
     st.text(f"Reading Task #: {n}")
-    sample = open(f'{test_choice}_reading_tasks/sample_{n}.txt', 'r',
+    sample = open(f'tasks/{test_choice}_reading_tasks/sample_{n}.txt', 'r',
               encoding="utf8")
     task_container = st.container()
     ar_container = st.container()
     reading_task(sample)
     
 
-    st.session_state.sample_text = open(f'{test_choice}_reading_tasks/sample_{n}.txt', 'r',
+    st.session_state.sample_text = open(f'tasks_dataset/{test_choice}_reading_tasks/sample_{n}.txt', 'r',
             encoding="utf8").read()
     with st.expander("show sample_text"):
         st.write(st.session_state.sample_text)

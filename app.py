@@ -21,7 +21,7 @@ st.image(image)
 show_pages(
     [
         Page("app.py", "Writing test", "📝"),
-        Page("pages/reading.py", "Reading test", "📖")
+        Page("pages/reading_page.py", "Reading test", "📖")
     ]
 )
 
@@ -71,12 +71,12 @@ if st.button("Get writing task", on_click=increment_counter):
     # grabs sample based on {subject} and {n}
     n = st.session_state.count
     st.text(f"{n = }")
-    sample = open(f'{subject}_writing_tasks/task{n}.txt', 'r',
+    sample = open(f'tasks_dataset/{subject}_writing_tasks/task{n}.txt', 'r',
               encoding="utf8")
     # n += 1
     task_container = st.container()
     writing_task(sample)
-    st.session_state["task_question"] = open(f'{subject}_writing_tasks/task{n}.txt', 'r',
+    st.session_state["task_question"] = open(f'tasks_dataset/{subject}_writing_tasks/task{n}.txt', 'r',
             encoding="utf8").read()
     # n += 1
     
@@ -99,8 +99,7 @@ if st.button("Evaluate my writing"):
                                test_choice=test_choice)
     st.write(score_json)
 
-    
-    
+
 st.subheader("Spelling")
 spelling_err = None
 
