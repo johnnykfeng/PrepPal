@@ -1,13 +1,15 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 from loguru import logger
 
+# api_key = os.environ['OPENAI_API_KEY']
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-def api_test(api_key, model="gpt-3.5-turbo"): 
+def api_test(api_key, model="gpt-4o"): 
     try:
-        output = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            api_key=api_key,
+        output = client.chat.completions.create(
+            model=model,
+            # api_key=api_key,
             temperature=0,
             messages=[{"role": "user", "content": "Hello"}]
         )

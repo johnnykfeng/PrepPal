@@ -1,4 +1,4 @@
-import openai
+from openai import OpenAI
 import json 
 import os
 import re
@@ -9,8 +9,10 @@ _ = load_dotenv(find_dotenv())
 
 # openai.api_key = os.environ['OPENAI_API_KEY']
 
+client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
+
 def chat_completion(prompt,
-                    model='gpt-3.5-turbo',
+                    model='gpt-4o',
                     api_key=None,
                     system_prompt="You are a helpful assistant",
                     temperature=0.1,
@@ -20,7 +22,7 @@ def chat_completion(prompt,
     if api_key is not None:
       openai.api_key = api_key
 
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model=model,
         temperature = temperature,
         top_p=top_p,
@@ -29,7 +31,8 @@ def chat_completion(prompt,
             {"role": "user", "content": prompt}]
         )
 
-    return response['choices'][0]['message']['content']
+    # return response['choices'][0]['message']['content']
+    return response.choices[0].message.content
 
 def spelling_finder(user_writing, chat_model="gpt-3.5-turbo"):
   # helper function, find spelling mistakes
@@ -214,6 +217,8 @@ def get_writing_score(writing_text, task_question, test_choice="ielts"):
   scoring_prompt = prompt_template.format(question_text=task_question, answer_text=writing_text)
   # print(f"{scoring_prompt = }")
   result = chat_completion(scoring_prompt)
+  
+  print(f"writing score: {result = }")
 
   try: # convert string to JSON
     result = json.loads(result)
@@ -266,6 +271,10 @@ def find_sentence_positions(para, sentence):
     positions.append((p_start, p_end))
     return positions
   
+def split_into_sentences(text):
+    sentences = re.split(r'(?<=[^A-Z].[.?]) +(?=[A-Z])', text)
+    return sentences
+  
 def full_grammar_corrector(text):
   # main function
   # split text into sentences
@@ -280,6 +289,8 @@ def full_grammar_corrector(text):
     for s in sentences:
         if s != ' ':
             sentence_lst.append(s)
+            
+    sentences = split_into_sentences(text)
 
     df = []
     for s in sentence_lst:
