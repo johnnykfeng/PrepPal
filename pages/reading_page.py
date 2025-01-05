@@ -1,7 +1,8 @@
 import streamlit as st
 import random
 import json
-from langchain.chat_models import ChatOpenAI
+# from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from gpt_functions import (mc_questions_json, 
                            fitb_generate, 
                            find_word_positions,
@@ -42,7 +43,7 @@ if st.button("Get reading task", on_click=increment_counter):
         
     n = st.session_state.count
     st.text(f"Reading Task #: {n}")
-    sample = open(f'tasks/{test_choice}_reading_tasks/sample_{n}.txt', 'r',
+    sample = open(f'tasks_dataset/{test_choice}_reading_tasks/sample_{n}.txt', 'r',
               encoding="utf8")
     task_container = st.container()
     ar_container = st.container()

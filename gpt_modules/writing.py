@@ -1,10 +1,17 @@
 import openai
-from prompts import (spell_check_system_prompt,
-                     same_meaning_system_prompt,
-                     same_meaning_user_prompt)
 import json
 import re 
+import os
 from loguru import logger
+import sys
+
+cwd = os.getcwd()
+# logger.info(cwd)
+sys.path.append(os.path.join(cwd + r'\gpt_modules')) # add gpt_modules to path
+
+from prompts import (spell_check_system_prompt,
+                    same_meaning_system_prompt,
+                    same_meaning_user_prompt)
 
 
 class WritingEvaluator:
@@ -22,9 +29,9 @@ class WritingEvaluator:
         self.temperature = 0.1
         self.max_tokens = 1000
         self.system_prompt = "You are a helpful assistant"
+        openai.api_key = openai_api_key
         
     def spell_check(self, user_writing):
-
         user_prompt = f"{user_writing}"
 
         result = openai.ChatCompletion.create(
@@ -138,3 +145,18 @@ class WritingEvaluator:
         except json.decoder.JSONDecodeError:
             logger.error("JSONDecoderError")
         return result
+
+
+if __name__ == "__main__":
+    logger.debug("Current working directory: " + os.getcwd())
+
+    import toml
+    with open(".streamlit/secrets.toml") as f:
+        secrets = toml.load(f)
+        OPENAI_API_KEY = secrets["OPENAI_API_KEY"]
+        
+    evaluator = WritingEvaluator(openai_api_key=OPENAI_API_KEY)
+    result = evaluator.spell_check("I m a goood speler.")
+    logger.debug(result)
+    
+    
