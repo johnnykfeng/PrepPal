@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 
 
 spell_check_instructions = 'Given the following piece of writing, \
@@ -19,3 +20,12 @@ def same_meaning_user_prompt(word1, word2):
     return f"Two words to compare: [[{word1}]], [[{word2}]]"
               
         
+class WritingScore(BaseModel):
+    task_achievement_score: int
+    coherence_and_cohesion_score: int
+    lexical_resource_score: int
+    grammatical_range_and_accuracy_score: int
+    overall_score: int
+    
+    
+

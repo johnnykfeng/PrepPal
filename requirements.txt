@@ -1,7 +1,7 @@
 streamlit
 st-pages
 langchain
-openai
+openai==1.73.0
 tiktoken
 transformers
 python-docx
