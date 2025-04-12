@@ -1,13 +1,12 @@
-from openai import OpenAI
 import json 
 import os
 import re
 import pandas as pd
+from pydantic import BaseModel
+from openai import OpenAI
 
 from dotenv import load_dotenv, find_dotenv
 _ = load_dotenv(find_dotenv())
-
-# openai.api_key = os.environ['OPENAI_API_KEY']
 
 client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
 
@@ -90,6 +89,12 @@ def same_meaning(word1, word2, model ='gpt-3.5-turbo'):
   else:
     return False
 
+class MCQuestion(BaseModel):
+  question: str
+  options: list[str]
+  correct_answer: str
+  explanation: str
+
 def mc_questions_json(text, n=5):
   """Generate multiple choice questions based on the contents of the text.
   """
@@ -170,63 +175,40 @@ def fitb_generate(reading_task,
 
   return fitb
 
+# TODO: fix this function, use the new structured output feature
+class WritingScoreIELTS(BaseModel):
+    task_achievement_score: int
+    coherence_and_cohesion_score: int
+    lexical_resource_score: int
+    grammatical_range_and_accuracy_score: int
+    overall_score: int
+    
+class WritingScoreCELPIP(BaseModel):
+    content_coherence_score: int
+    vocabulary_score: int
+    readability_score: int
+    task_fulfillment_score: int
+    overall_score: int
+
+
 def get_writing_score(writing_text, task_question, test_choice="ielts"):
+  system_prompt = f"""
+  You are a professional {test_choice.upper()} writing task examiner. You are given a writing task question and a writing task answer.
+  You need to score the writing task answer based on the {test_choice.upper()} writing task criteria: 
+  Task achievement, Coherence and cohesion, Lexical resource, Grammatical range and accuracy, and Overall score.
+  Each score should be between 0 and 10.
   """
-  Calculate the writing score based on a given test type (IELTS or CELPIP).
-
-  Parameters:
-  - writing_text (str): The writing sample to be evaluated.
-  - task_question (str): The specific question or task related to the writing test.
-  - test_choice (str, optional): The type of the test being used for evaluation. Default is "ielts".
-    Supported test types are "ielts" and "celpip".
-
-  Returns:
-  - result: The score or evaluation result for the provided writing test.
-
-  Note:
-  - If an unsupported test type is provided, the function will indicate "Invalid test choice".
-  """
-
-  # 2 different tests
-  ielts_test = """
-  You are a profesional IELTS writing task examer for General Training.
-  Score the following text and provide subscore for each of the 4 IELTS criteria.Criterias:"Task achievement", \
-  "Coherence and cohesion","Lexical resource","Grammatical range and accuracy".
-  Writing task questions:\n{question_text}
-  Writing task answer:\n{answer_text}"
-  Output overall score and subscore in a dictionary format. Round the score to one decimal place with the first decimal digit only being 0 or 5.
-  """
-  celpip_test = """
-  You are a professional CELPIP writing task examer.
-  Score the following text and provide subscore for each of the 4 criteria.Criterias:"Content/Coherence", \
-  "Vocabulary","Readability","Task Fulfillment".\
-  Writing task questions:\n{question_text}
-  Writing task answer:\n{answer_text}
-  Output the overall score and subscore in a dictionary format. Round the score to integer.
-  """
-
-  # Switch between tests based on test_choice value
-  if test_choice.lower() == "ielts":
-      prompt_template = ielts_test
-  elif test_choice.lower() == "celpip":
-      prompt_template = celpip_test
-  else:
-      prompt_template = "Invalid test choice"
-
-  # Apply the selected test, insert the writing text, and print the result
-  scoring_prompt = prompt_template.format(question_text=task_question, answer_text=writing_text)
-  # print(f"{scoring_prompt = }")
-  result = chat_completion(scoring_prompt)
-  
-  print(f"writing score: {result = }")
-
-  try: # convert string to JSON
-    result = json.loads(result)
-  except JSONDecodeError:
-    print("JSONDecoderError")
-
-  return result
-
+  user_prompt = f"Writing task questions: {task_question}\nWriting task answer: {writing_text}"
+  response = client.beta.chat.completions.parse(
+    model="gpt-4o-mini",
+    messages = [
+      {'role': 'system', 'content': system_prompt},
+      {'role': 'user', 'content': user_prompt}
+    ],
+    response_format=(WritingScoreIELTS if test_choice == "ielts" else WritingScoreCELPIP),
+    temperature=0
+  )
+  return response.choices[0].message.parsed
 
 def grammar_judge(sentence, model = "gpt-3.5-turbo"):
   # herlper function, find grammar error.
@@ -243,7 +225,6 @@ def grammar_judge(sentence, model = "gpt-3.5-turbo"):
 
     return result
   
-
 def correct_sentence(sentence):
   # helper function, correct the sentences from grammar error.
     system_prompt = '''
@@ -312,16 +293,42 @@ def full_grammar_corrector(text):
     return pd.DataFrame(df)
   
   
-def create_suggestions(user_writing, model = "gpt-3.5-turbo"):
-    system_prompt = '''
-                    You are a professional IELTS writing examiner, \
+class SuggestionsIELTS(BaseModel):
+    task_achievement_improvements: str
+    coherence_and_cohesion_improvements: str
+    lexical_resource_improvements: str
+    grammatical_range_and_accuracy_improvements: str
+    
+class SuggestionsCELPIP(BaseModel):
+    content_coherence_improvements: str
+    vocabulary_improvements: str
+    readability_improvements: str
+    task_fulfillment_improvements: str
+    
+  
+def create_suggestions(user_writing, test_choice = "ielts", model = "gpt-4o-mini"):
+    if test_choice == "ielts":
+      criteria = "Task achievement, Coherence and cohesion, Lexical resource, and Grammatical range and accuracy."
+      response_format = SuggestionsIELTS
+    elif test_choice == "celpip":
+      criteria = "Content/Coherence, Vocabulary, Readability, and Task Fulfillment."
+      response_format = SuggestionsCELPIP
+    system_prompt = f'''
+                    You are a professional {test_choice.upper()} writing examiner, \
                     provide suggestions for improving writing on the following paragraph \
-                    based on the four criteria in IELTS writing, \
-                    Task achievement, Coherence and cohesion, Lexical resource, and Grammatical range and accuracy. \
-                    Output only the suggestions, and in four different paragraphs, each represent one criteria.
+                    based on the four criteria in {test_choice.upper()} writing, \
+                    {criteria} \
+                    Output only one paragraph of suggestions for each criteria.
                     '''
     user_prompt = f"{user_writing}"
-    lst = chat_completion(prompt = user_prompt, system_prompt = system_prompt, model = model, temperature=0)
+    response = client.beta.chat.completions.parse(
+      model=model,
+      messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+      ],
+      response_format=response_format,
+      temperature=0)  
 
-    sentence = lst.split('\n\n')
-    return sentence
+    return response.choices[0].message.parsed
+   
