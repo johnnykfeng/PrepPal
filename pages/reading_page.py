@@ -1,8 +1,6 @@
 import streamlit as st
 import random
 import json
-# from langchain.chat_models import ChatOpenAI
-from langchain_openai import ChatOpenAI
 from gpt_functions import (mc_questions_json, 
                            generate_mc_questions,
                            fitb_generate, 
