@@ -22,7 +22,6 @@ st.session_state['api_key'], st.session_state['api_key_check'] = user_input_apik
 
 openai.api_key = st.session_state['api_key']
 
-
 st.title("Writing test")
 st.subheader("Pass your English Proficiency test with the power of AI")
 
@@ -33,7 +32,7 @@ subject = test_choice
 
 st.markdown(f"PrepPal will help you study for **{test_choice}**")
 
-def writing_task(sample):
+def get_writing_task(sample):
     task_container.caption(
         "Write an essay based on the following topic. Keep it under 250 words.")
     task_container.write("**Essay Topic:**")
@@ -73,7 +72,7 @@ if st.session_state['show_task']:
     sample = open(f'tasks_dataset/{subject}_writing_tasks/task{n}.txt', 'r',
               encoding="utf8")
     task_container = st.container()
-    writing_task(sample)
+    get_writing_task(sample)
     st.session_state["task_question"] = open(f'tasks_dataset/{subject}_writing_tasks/task{n}.txt', 'r',
             encoding="utf8").read()
     

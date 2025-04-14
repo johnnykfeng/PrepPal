@@ -35,7 +35,7 @@ def chat_completion(prompt,
     return response.choices[0].message.content
 
 
-def spelling_finder(user_writing, chat_model="gpt-3.5-turbo"):
+def spelling_finder(user_writing, chat_model="gpt-4o-mini"):
     # helper function, find spelling mistakes
     # works much better with gpt-4
     system_prompt = '''Given the following piece of writing, \
@@ -79,7 +79,7 @@ def contains_word(s, word):
     return re.search(f'\\b{word}\\b', s) is not None
 
 
-def same_meaning(word1, word2, model='gpt-3.5-turbo'):
+def same_meaning(word1, word2, model='gpt-4o-mini'):
 
     system = """You are a helpful assistant that helps students practice for their english proficieny exams. \
   Given the following two words enclosed in double square brackets [[]], \
@@ -123,8 +123,9 @@ def generate_mc_questions(text, n=5):
   answer across the options. Each question should be different and not repeated.
   
   IMPORTANT: You MUST generate exactly {n} questions, no more and no less.
-  Each question should have exactly 4 options (A, B, C, D).
-  Format the response as a JSON object with exactly {n} questions in the questions array."""
+  Each question should have exactly 4 options (A, B, C, D), randomize the order of the correct answer.
+  e.g. if the previous correct answer is A, the next question should not have A as the correct answer.
+  """
 
     user_prompt = f"Here is the text: {text}"
     response = client.beta.chat.completions.parse(
@@ -139,88 +140,75 @@ def generate_mc_questions(text, n=5):
     return response.choices[0].message.parsed
 
 
-def mc_questions_json(text, n=5):
-    """Generate multiple choice questions based on the contents of the text.
-    """
-    system_prompt = """Given the corpus of text, \
-  generate {n} multiple choice questions\
-  based on the contents of the text. The goal of the these questions is to \
-  quiz the reader. Make sure to randomize \
-  the order of the answers for each question and evenly distribute the correct \
-  answer across the options. Each question should be different and not repeated. \
-  Format the questions in JSON as follows, make sure to use double quotes:\n \
-  {{\
-    "questions": [\
-      {{\
-        "question": "Who did X?",\
-        "options": [\
-         "A) Answer 1",\
-         "B) Answer 2",\
-         "C) Answer 3",\
-         "D) Answer 4"
-        ],\
-        "correct_answer": "C) Answer 3", \
-        "explanation": "Explanation of the correct answer" \
-      }},\
-      // More questions...\
-    ]\
-  }}
-  """
-    user_prompt = f"The text delimited in triple backticks:```{text}```"
-    result = chat_completion(prompt=user_prompt,
-                             system_prompt=system_prompt,
-                             temperature=0)
-    # result = chat_model(chat_prompt.format_prompt(n=n, text=text).to_messages())
-    try:
-        json_result = json.loads(result)
-    except Exception as e:
-        print(f"Error: {e}")
-        json_result = result
-    return json_result
+# def mc_questions_json(text, n=5):
+#     """Generate multiple choice questions based on the contents of the text.
+#     """
+#     system_prompt = """Given the corpus of text, \
+#   generate {n} multiple choice questions\
+#   based on the contents of the text. The goal of the these questions is to \
+#   quiz the reader. Make sure to randomize \
+#   the order of the answers for each question and evenly distribute the correct \
+#   answer across the options. Each question should be different and not repeated. \
+#   Format the questions in JSON as follows, make sure to use double quotes:\n \
+#   {{\
+#     "questions": [\
+#       {{\
+#         "question": "Who did X?",\
+#         "options": [\
+#          "A) Answer 1",\
+#          "B) Answer 2",\
+#          "C) Answer 3",\
+#          "D) Answer 4"
+#         ],\
+#         "correct_answer": "C) Answer 3", \
+#         "explanation": "Explanation of the correct answer" \
+#       }},\
+#       // More questions...\
+#     ]\
+#   }}
+#   """
+#     user_prompt = f"The text delimited in triple backticks:```{text}```"
+#     result = chat_completion(prompt=user_prompt,
+#                              system_prompt=system_prompt,
+#                              temperature=0)
+#     # result = chat_model(chat_prompt.format_prompt(n=n, text=text).to_messages())
+#     try:
+#         json_result = json.loads(result)
+#     except Exception as e:
+#         print(f"Error: {e}")
+#         json_result = result
+#     return json_result
 
+class FITB(BaseModel):
+    incomplete_sentence: str
+    missing_word: str
+    
+class FITBQuestions(BaseModel):
+    questions: list[FITB]
 
-def fitb_generate(reading_task,
-                  n=3,
-                  test_choice='ielts',
-                  model='gpt-3.5-turbo',
-                  temperature=0.4):
-    """Generate fill in the blank exercises based on the contents of the text.
-
-    Args:
-        reading_task (str): long form text like a reading task.
-        n (int, optional): Number of exercises to generate. Defaults to 3.
-        test_choice (str, optional): _description_. Defaults to 'ielts'.
-        model (str, optional): _description_. Defaults to 'gpt-3.5-turbo'.
-        temperature (float, optional): _description_. Defaults to 0.4.
-
-    Returns:
-        _type_: _description_
-    """
-
+def fitb_generate(reading_task, n=3, model='gpt-4o-mini', test_choice='ielts', temperature=0.2):
     system_prompt = f'''Given the reading task for {test_choice.upper()} \
-  english proficiency test delimted in \
-  triple backticks ```, generate {n} fill in the blank exercises \
-  based on the contents of the text. The intent of these exercises \
-  is to quiz the reader. Do not copy sentences from the given reading task, \
-  create new sentence that relate to the content of the reading. \
-  Format the output as a JSON file as follows:\
-  [{{"incomplete_sentence": "<sentence with missing word as `___`>", "missing_word": \
-  <missing word from the incomplete sentence>}}]
-  '''
+english proficiency test delimted in \
+triple backticks ```, generate {n} fill in the blank exercises \
+based on the contents of the text. The intent of these exercises \
+is to quiz the reader. Do not copy sentences from the given reading task, \
+create new sentence that relate to the content of the reading. \
+Format the output as a JSON file as follows:\
+[{{"incomplete_sentence": "<sentence with missing word as `___`>", "missing_word": \
+<missing word from the incomplete sentence>}}]
+'''
     user_prompt = f'Here is the reading task: ```{reading_task}```'
-    result = chat_completion(prompt=user_prompt,
-                             system_prompt=system_prompt,
-                             model=model,
-                             temperature=temperature)
-    try:
-        fitb = json.loads(result)
-    except Exception as e:
-        print("JSONDecodeError")
-        return result
 
-    return fitb
-
-# TODO: fix this function, use the new structured output feature
+    response = client.beta.chat.completions.parse(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            response_format=FITBQuestions,
+            temperature=temperature
+    )
+    return response.choices[0].message.parsed
 
 
 class WritingScoreIELTS(BaseModel):
@@ -260,7 +248,7 @@ def get_writing_score(writing_text, task_question, test_choice="ielts"):
     return response.choices[0].message.parsed
 
 
-def grammar_judge(sentence, model="gpt-3.5-turbo"):
+def grammar_judge(sentence, model="gpt-4o-mini"):
     # herlper function, find grammar error.
     system_prompt = '''
                     Determine if the sentence has grammar mistakes. /
@@ -287,7 +275,7 @@ def correct_sentence(sentence):
     user_prompt = f"{sentence}"
     result = chat_completion(prompt=user_prompt,
                              system_prompt=system_prompt,
-                             model="gpt-3.5-turbo",
+                             model="gpt-4o-mini",
                              temperature=0)
 
     return result
